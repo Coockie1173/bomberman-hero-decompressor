@@ -1,2 +1,4 @@
 # Ignore build directory
 build/
+*.z64
+extracted/

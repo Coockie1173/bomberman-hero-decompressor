@@ -27,3 +27,9 @@ clean:
 	rm -f $(BUILDDIR)/*.o $(BUILDDIR)/myprogram$(EXE_EXT)
 
 .PHONY: clean
+
+extract: $(BUILDDIR) myprogram$(EXE_EXT)
+	mkdir extracted
+	./$(BUILDDIR)/myprogram$(EXE_EXT) ./Hero.z64 ./extracted
+
+.PHONY: extract
