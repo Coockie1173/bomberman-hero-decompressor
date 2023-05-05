@@ -22,6 +22,7 @@
 
 #define BH_LEVEL_TABLE_ADDR 0x000F984C
 #define BH_NAME_TABLE_ADDR  0x001172AC
+#define BH_UNK_TABLE_ADDR   0x00115230
 
 typedef struct
 {
@@ -35,6 +36,14 @@ typedef struct
     /*1C*/ uint32_t unk1C;
     /*20*/ uint32_t unk20;
 } bh_level_info_t;
+
+typedef struct 
+{
+    /*00*/ uint32_t unk00;
+    /*04*/ uint32_t fileStart;
+    /*08*/ uint32_t fileEnd;
+} bh_unknown_info_t;
+
 
 void decompress_levels(uint8_t *rom, const char *dirPath)
 {
@@ -50,10 +59,10 @@ void decompress_levels(uint8_t *rom, const char *dirPath)
 
         char path[256];
 
-        sprintf(path, "%s/%02X.collision.bin", dirPath, i);
+        sprintf(path, "%s/levels/%02X.collision.bin", dirPath, i);
         lzss_decode_to_file(&rom[collisionAddr], path);
 
-        sprintf(path, "%s/%02X.gfx.bin", dirPath, i);
+        sprintf(path, "%s/levels/%02X.gfx.bin", dirPath, i);
         lzss_decode_to_file(&rom[gfxAddr], path);
 
         printf("unk00: %08X, collision:%08X %08X, gfx:%08X %08X, unk14: %08X, unk18: %08X, unk20: %08X\n",
@@ -76,6 +85,28 @@ void print_some_names(uint8_t *rom)
     {
         uint8_t *entry = &rom[BH_NAME_TABLE_ADDR + (i * 0x60)];
         printf("%s\n", &entry[0x4C]);
+    }
+}
+
+void extract_unk_table(uint8_t *rom, const char *dirPath)
+{
+    bh_unknown_info_t *levelTable = (bh_unknown_info_t *) &rom[BH_UNK_TABLE_ADDR];
+
+    for(int i = 0; i < 262; i++)
+    {
+        bh_unknown_info_t info = levelTable[i];
+        uint32_t fileStart = BSWAP32(info.fileStart);
+        uint32_t fileEnd = BSWAP32(info.fileEnd);
+
+        char path[256];
+        sprintf(path, "%s/files/%02X.file.bin", dirPath, i);
+        printf("unk00: %08X, File Start: %08X, File End: %08X\n",
+        BSWAP32(info.unk00),
+        BSWAP32(info.fileStart),
+        BSWAP32(info.fileEnd)
+        );
+
+        lzss_decode_to_file(&rom[fileStart], path);
     }
 }
 
@@ -113,6 +144,17 @@ int main(int argc, const char *argv[])
     }
 
     makedir(dirPath);
+    char newDirPath[100]; // buffer to store the new directory path
+    
+    strcpy(newDirPath, dirPath);
+    strcat(newDirPath, "/levels/");
+
+    makedir(newDirPath);
+
+    strcpy(newDirPath, dirPath);
+    strcat(newDirPath, "/files/");
+
+    makedir(newDirPath);
 
     fseek(fp, 0, SEEK_END);
     romSize = ftell(fp);
@@ -122,6 +164,7 @@ int main(int argc, const char *argv[])
     fclose(fp);
 
     decompress_levels(rom, dirPath);
-    //print_some_names(rom);
+    print_some_names(rom);
+    extract_unk_table(rom, dirPath);
     free(rom);
 }

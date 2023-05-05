@@ -24,11 +24,12 @@ $(BUILDDIR):
 	mkdir $(BUILDDIR)
 
 clean:
-	rm -f $(BUILDDIR)/*.o $(BUILDDIR)/myprogram$(EXE_EXT)
+	rm -rf $(BUILDDIR) extracted
 
 .PHONY: clean
 
 extract: $(BUILDDIR) myprogram$(EXE_EXT)
+	rm -rf extracted
 	mkdir extracted
 	./$(BUILDDIR)/myprogram$(EXE_EXT) ./Hero.z64 ./extracted
 
